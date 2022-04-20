@@ -338,6 +338,8 @@ class SQLCreate(SQLDML):
     columns: SQLNodeList[SQLColumn]
     options: Optional[SQLOptions]
     query: Optional[SQLNode]
+    partition_by: List[SQLColumn]
+    cluster_by: List[SQLColumn]
 
     def sqlf(self, compact):
         lines = [TB(self.clause), TB(' ')]
@@ -420,17 +422,19 @@ class SQLCreate(SQLDML):
                     break
             lex.expect(')')
 
-        partition_by = None
+        partition_by: List[SQLColumn] = []
         if lex.consume('PARTITION'):
             lex.expect('BY')
             # TODO: Finish
             lex.error('PARTITION BY unimplemented')
 
-        cluster_by = None
+        cluster_by: List[SQLColumn] = []
         if lex.consume('CLUSTER'):
             lex.expect('BY')
-            # TODO: Finish
-            lex.error('CLUSTER BY unimplemented')
+            while True:
+                cluster_by.append(lex.consume_identifier() or lexer.error('Expected CLUSTER BY column'))
+                if not lex.consume(','):
+                    break
 
         # Find options
         options = SQLOptions.consume(lex)
@@ -440,6 +444,6 @@ class SQLCreate(SQLDML):
         if lex.consume('AS'):
             query = SQLQuery.parse(lex)
 
-        return SQLCreate(clause, table, columns, options, query)
+        return SQLCreate(clause, table, columns, options, query, partition_by, cluster_by)
 
 
