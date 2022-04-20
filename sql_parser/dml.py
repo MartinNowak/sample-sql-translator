@@ -232,7 +232,7 @@ class SQLOption(SQLDML):
 
     @staticmethod
     def parse(lex) -> 'SQLOption':
-        key = lex.consumer_identifier()
+        key = lex.consume_identifier()
         lex.expect('=')
         val = SQLExpr.parse(lex)
 
