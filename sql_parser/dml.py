@@ -380,6 +380,10 @@ class SQLCreate(SQLDML):
 
     @staticmethod
     def consume(lex):
+        """
+        See also:
+          `CREATE TABLE statement <https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#create_table_statement>`_
+        """
         if not lex.consume('CREATE'):
             return None
 
@@ -387,18 +391,22 @@ class SQLCreate(SQLDML):
         clause = None
         if lex.consume('OR'):
             lex.expect('REPLACE')
-            lex.expect('TABLE')
-            clause = 'CREATE OR REPLACE TABLE'
+            clause = 'CREATE OR REPLACE'
+        else:
+            clause = 'CREATE'
+
+        for kind in ['TABLE', 'VIEW', 'MATERIALIZED VIEW']:
+            if lex.consume(kind):
+                clause += ' ' + kind
+                break
         else:
             lex.expect('TABLE')
 
-            # Check for IF NOT EXISTS
-            if lex.consume('IF'):
-                lex.expect('NOT')
-                lex.expect('EXISTS')
-                clause = 'CREATE TABLE IF NOT EXISTS'
-            else:
-                clause = 'CREATE TABLE'
+        # Check for IF NOT EXISTS
+        if not clause.startswith('CREATE OR REPLACE') and lex.consume('IF'):
+            lex.expect('NOT')
+            lex.expect('EXISTS')
+            clause += ' IF NOT EXISTS'
 
         # Parse table
         table = SQLNamedTable.parse_no_alias(lex, is_write=True)

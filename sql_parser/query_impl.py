@@ -215,7 +215,7 @@ class SQLSelect(SQLQuery):
         lines = []
         lines.append(LB(select_clause))
         lines.append(TB(' '))
-        lines.append(LB(with_commas(True, self.fields)))
+        lines.append(LB(with_commas(True, self.fields, tail=True)))
         if self.from_tables:
             lines.append(TB(' FROM '))
             lines.append(self.from_tables.sqlf(True))
@@ -286,7 +286,7 @@ class SQLSelect(SQLQuery):
         fields: List[SQLField] = []
         while True:
             fields.append(SQLField.parse(lex))
-            if not lex.consume(','):
+            if not lex.consume(',') or lex.peek('FROM'):
                 break
 
         from_tables = lex.consume('FROM') and SQLFrom.parse(lex)
